@@ -1,63 +1,52 @@
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+res.setHeader("Access-Control-Allow-Origin","*");
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Only POST allowed" });
-  }
+if(req.method!=="POST"){
+ return res.status(405).json({
+   error:"Only POST allowed"
+ });
+}
 
-  try {
-    const { message, pageUrl } = req.body;
+try{
 
-    const systemPrompt = `
-You are a helpful chatbot for Glow Natural Wellness.
+const {message}=req.body;
 
-You help users on hormone replacement pages.
-Ask simple questions and recommend products only from this collection:
-https://www.glownaturalwellness.com/collections/hormone-replacement
+const response = await fetch(
+"https://api.openai.com/v1/chat/completions",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":`Bearer ${process.env.OPENAI_API_KEY}`
+},
+body:JSON.stringify({
+model:"gpt-4o-mini",
+messages:[
+{
+role:"system",
+content:"You are Glow Natural Wellness hormone assistant. Help users and recommend products from hormone replacement collection."
+},
+{
+role:"user",
+content:message
+}
+]
+})
+});
 
-Do not diagnose medical conditions.
-Do not give dosage advice.
-Do not say products cure or treat disease.
-Keep answers short, helpful, and conversational.
-Always suggest consulting a licensed healthcare provider for medical concerns.
-`;
+const data=await response.json();
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        input: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: `Page URL: ${pageUrl || ""}\nUser message: ${message}`
-          }
-        ]
-      })
-    });
+return res.status(200).json({
+reply:data.choices[0].message.content
+});
 
-    const data = await response.json();
+}catch(error){
 
-    return res.status(200).json({
-      reply: data.output_text || "Sorry, I could not answer right now."
-    });
+return res.status(500).json({
+error:error.message
+});
 
-  } catch (error) {
-    return res.status(500).json({
-      error: error.message
-    });
-  }
+}
+
 }
