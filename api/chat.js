@@ -60,8 +60,8 @@ const PRODUCT_CATALOG = [
     url: "https://www.glownaturalwellness.com/products/clean-hormones-complete",
     image: "https://www.glownaturalwellness.com/cdn/shop/files/glow-natural-wellness-clean-hormones-complete-1226666123.png?v=1773076270&width=300",
     type: "Personalized 1:1 hormone coaching program",
-    bestFor: "Personalized intake, one-on-one consultation, custom hormone protocol, ongoing follow-ups, Hormone Hotline, Healthy Hormone Academy access, and 25% off hormone subscriptions.",
-    guide: "Best when the user wants deeper personalized help, 1:1 clinical-style guidance, custom protocol, symptom review, follow-up consultations, hormone testing guidance, or long-term structured support."
+    bestFor: "Personalized intake, one-on-one consultation, custom hormone protocol, ongoing follow-ups, Hormone Hotline, Healthy Hormone Academy access, and subscription savings.",
+    guide: "Best when the user wants deeper personalized help, 1:1 guidance, custom protocol, symptom review, follow-up consultations, hormone testing guidance, or long-term structured support."
   }
 ];
 
@@ -89,7 +89,7 @@ function productCard(product, reason) {
       </div>
 
       <p style="margin-top:10px;font-size:12px;line-height:1.35;color:#666;">
-        This is general wellness guidance, not medical advice. Please consult a healthcare professional for personal hormone concerns.
+        This is general wellness guidance, not medical advice. For personal support, contact our team at support@glownaturalwellness.com or call +1 (855) 928-4442.
       </p>
     </div>
   `;
@@ -119,7 +119,7 @@ function twoProductCards(productOne, productTwo, reason) {
       </div>
 
       <p style="margin-top:10px;font-size:12px;line-height:1.35;color:#666;">
-        This is general wellness guidance, not medical advice. Please consult a healthcare professional for personal hormone concerns.
+        This is general wellness guidance, not medical advice. For personal support, contact our team at support@glownaturalwellness.com or call +1 (855) 928-4442.
       </p>
     </div>
   `;
@@ -130,7 +130,7 @@ function plainReply(text) {
     <div>
       <p>${escapeHtml(text)}</p>
       <p style="margin-top:10px;font-size:12px;line-height:1.35;color:#666;">
-        This is general wellness guidance, not medical advice.
+        This is general wellness guidance, not medical advice. For personal support, contact our team at support@glownaturalwellness.com or call +1 (855) 928-4442.
       </p>
     </div>
   `;
@@ -145,9 +145,7 @@ function getIntent(message) {
   ];
 
   if (unrelatedWords.some(word => text.includes(word))) {
-    return {
-      type: "unrelated"
-    };
+    return { type: "unrelated" };
   }
 
   if (
@@ -196,23 +194,20 @@ function getIntent(message) {
     text.includes("help me choose") ||
     text.includes("i don't know where to start") ||
     text.includes("dont know where to start") ||
-    text.includes("confused")
+    text.includes("confused") ||
+    text.includes("not sure")
   ) {
-    return {
-      type: "compare_coaching"
-    };
+    return { type: "compare_coaching" };
   }
 
   if (
-    text.includes("drop") && text.includes("cream") ||
+    (text.includes("drop") && text.includes("cream")) ||
     text.includes("drops or cream") ||
     text.includes("cream or drops") ||
     text.includes("difference") ||
     text.includes("compare")
   ) {
-    return {
-      type: "compare_format"
-    };
+    return { type: "compare_format" };
   }
 
   if (
@@ -293,9 +288,7 @@ function getIntent(message) {
     text.includes("fatigue") ||
     text.includes("exhausted")
   ) {
-    return {
-      type: "followup_energy"
-    };
+    return { type: "followup_energy" };
   }
 
   if (
@@ -305,14 +298,10 @@ function getIntent(message) {
     text.includes("not feeling good") ||
     text.includes("which product")
   ) {
-    return {
-      type: "followup_general"
-    };
+    return { type: "followup_general" };
   }
 
-  return {
-    type: "ai"
-  };
+  return { type: "ai" };
 }
 
 export default async function handler(req, res) {
@@ -347,10 +336,11 @@ export default async function handler(req, res) {
 
     if (intent.type === "compare_coaching") {
       return res.status(200).json({
+        recommendedProduct: "Clean Hormones Club + Clean Hormones Complete",
         reply: twoProductCards(
           PRODUCT_CATALOG[6],
           PRODUCT_CATALOG[7],
-          "If you want support, there are two good options: Clean Hormones Club for affordable group guidance and community support, or Clean Hormones Complete for deeper personalized 1:1 help and a custom protocol."
+          "If you want support, there are two strong options: Clean Hormones Club for affordable group guidance and community support, or Clean Hormones Complete for deeper personalized 1:1 help and a custom protocol."
         )
       });
     }
@@ -359,10 +349,10 @@ export default async function handler(req, res) {
       return res.status(200).json({
         reply: `
           <div>
-            <p>Both formats can support hormone wellness, but the best choice depends on preference:</p>
-            <p><strong>Drops</strong>: good if you prefer a lightweight topical oil format.</p>
-            <p><strong>Creams</strong>: good if you prefer a transdermal cream texture.</p>
-            <p>If you want expert help choosing, Clean Hormones Club gives group guidance, while Clean Hormones Complete gives personalized 1:1 support.</p>
+            <p>Both formats can support hormone wellness. The best choice depends on your preference and goal:</p>
+            <p><strong>Drops</strong>: lightweight topical oil format.</p>
+            <p><strong>Creams</strong>: transdermal cream texture.</p>
+            <p>Which type of support are you looking for: progesterone, estrogen, DHEA/testosterone, or coaching?</p>
           </div>
         `
       });
@@ -392,6 +382,7 @@ export default async function handler(req, res) {
 
     if (intent.type === "recommend") {
       return res.status(200).json({
+        recommendedProduct: intent.product.title,
         reply: productCard(intent.product, intent.reason)
       });
     }
@@ -471,6 +462,7 @@ Rules:
 
     if (selectedProduct) {
       return res.status(200).json({
+        recommendedProduct: selectedProduct.title,
         reply: productCard(selectedProduct, parsed.answer)
       });
     }
