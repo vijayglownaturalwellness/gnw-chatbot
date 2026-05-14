@@ -46,6 +46,22 @@ const PRODUCT_CATALOG = [
     type: "Transdermal DHEA cream",
     bestFor: "DHEA and testosterone support, vitality, clarity, strength, and cream-based absorption.",
     guide: "Best when the user mentions testosterone support, low libido, low vitality, strength, clarity, or wants cream format."
+  },
+  {
+    title: "Clean Hormones Club",
+    url: "https://www.glownaturalwellness.com/products/clean-hormones-club",
+    image: "https://www.glownaturalwellness.com/cdn/shop/files/glow-natural-wellness-clean-hormones-club-1226666122.png?v=1773076297&width=300",
+    type: "Group hormone coaching membership",
+    bestFor: "Weekly group coaching, live Q&A, private hormone support community, education, accountability, and ongoing guidance.",
+    guide: "Best when the user wants affordable expert guidance, community support, education, weekly calls, live Q&A, or help understanding hormones without doing it alone."
+  },
+  {
+    title: "Clean Hormones Complete",
+    url: "https://www.glownaturalwellness.com/products/clean-hormones-complete",
+    image: "https://www.glownaturalwellness.com/cdn/shop/files/glow-natural-wellness-clean-hormones-complete-1226666123.png?v=1773076270&width=300",
+    type: "Personalized 1:1 hormone coaching program",
+    bestFor: "Personalized intake, one-on-one consultation, custom hormone protocol, ongoing follow-ups, Hormone Hotline, Healthy Hormone Academy access, and 25% off hormone subscriptions.",
+    guide: "Best when the user wants deeper personalized help, 1:1 clinical-style guidance, custom protocol, symptom review, follow-up consultations, hormone testing guidance, or long-term structured support."
   }
 ];
 
@@ -79,6 +95,36 @@ function productCard(product, reason) {
   `;
 }
 
+function twoProductCards(productOne, productTwo, reason) {
+  return `
+    <div>
+      <p>${escapeHtml(reason)}</p>
+
+      <div class="gnw-product-card">
+        <img src="${escapeHtml(productOne.image)}" alt="${escapeHtml(productOne.title)}" loading="lazy">
+        <div>
+          <strong>${escapeHtml(productOne.title)}</strong>
+          <p>${escapeHtml(productOne.bestFor)}</p>
+          <a href="${escapeHtml(productOne.url)}" target="_blank" rel="noopener">View Product</a>
+        </div>
+      </div>
+
+      <div class="gnw-product-card">
+        <img src="${escapeHtml(productTwo.image)}" alt="${escapeHtml(productTwo.title)}" loading="lazy">
+        <div>
+          <strong>${escapeHtml(productTwo.title)}</strong>
+          <p>${escapeHtml(productTwo.bestFor)}</p>
+          <a href="${escapeHtml(productTwo.url)}" target="_blank" rel="noopener">View Product</a>
+        </div>
+      </div>
+
+      <p style="margin-top:10px;font-size:12px;line-height:1.35;color:#666;">
+        This is general wellness guidance, not medical advice. Please consult a healthcare professional for personal hormone concerns.
+      </p>
+    </div>
+  `;
+}
+
 function plainReply(text) {
   return `
     <div>
@@ -101,6 +147,59 @@ function getIntent(message) {
   if (unrelatedWords.some(word => text.includes(word))) {
     return {
       type: "unrelated"
+    };
+  }
+
+  if (
+    text.includes("complete") ||
+    text.includes("1:1") ||
+    text.includes("one on one") ||
+    text.includes("personalized") ||
+    text.includes("custom protocol") ||
+    text.includes("consultation") ||
+    text.includes("specialist") ||
+    text.includes("testing") ||
+    text.includes("labs") ||
+    text.includes("lab") ||
+    text.includes("deeper support") ||
+    text.includes("private coaching")
+  ) {
+    return {
+      type: "recommend",
+      product: PRODUCT_CATALOG[7],
+      reason: "Clean Hormones Complete may be the best fit if you want personalized guidance, a 1:1 consultation, a custom hormone protocol, and ongoing support instead of guessing on your own."
+    };
+  }
+
+  if (
+    text.includes("club") ||
+    text.includes("community") ||
+    text.includes("group") ||
+    text.includes("weekly call") ||
+    text.includes("weekly calls") ||
+    text.includes("live q&a") ||
+    text.includes("education") ||
+    text.includes("accountability") ||
+    text.includes("coaching help") ||
+    text.includes("expert guidance")
+  ) {
+    return {
+      type: "recommend",
+      product: PRODUCT_CATALOG[6],
+      reason: "Clean Hormones Club may be the best fit if you want affordable expert guidance, weekly group calls, live Q&A, education, and community support."
+    };
+  }
+
+  if (
+    text.includes("coaching") ||
+    text.includes("support program") ||
+    text.includes("help me choose") ||
+    text.includes("i don't know where to start") ||
+    text.includes("dont know where to start") ||
+    text.includes("confused")
+  ) {
+    return {
+      type: "compare_coaching"
     };
   }
 
@@ -204,7 +303,6 @@ function getIntent(message) {
     text.includes("hormone balance") ||
     text.includes("balance") ||
     text.includes("not feeling good") ||
-    text.includes("help me choose") ||
     text.includes("which product")
   ) {
     return {
@@ -243,7 +341,17 @@ export default async function handler(req, res) {
 
     if (intent.type === "unrelated") {
       return res.status(200).json({
-        reply: plainReply("I can help with Glow hormone wellness products only. Tell me what you need support with: sleep, mood, energy, hot flashes, libido, or drops vs cream.")
+        reply: plainReply("I can help with Glow hormone wellness products and coaching options only. Tell me what you need support with: sleep, mood, energy, hot flashes, libido, drops vs cream, or coaching.")
+      });
+    }
+
+    if (intent.type === "compare_coaching") {
+      return res.status(200).json({
+        reply: twoProductCards(
+          PRODUCT_CATALOG[6],
+          PRODUCT_CATALOG[7],
+          "If you want support, there are two good options: Clean Hormones Club for affordable group guidance and community support, or Clean Hormones Complete for deeper personalized 1:1 help and a custom protocol."
+        )
       });
     }
 
@@ -254,7 +362,7 @@ export default async function handler(req, res) {
             <p>Both formats can support hormone wellness, but the best choice depends on preference:</p>
             <p><strong>Drops</strong>: good if you prefer a lightweight topical oil format.</p>
             <p><strong>Creams</strong>: good if you prefer a transdermal cream texture.</p>
-            <p>Which hormone support are you looking for: progesterone, estrogen, or DHEA/testosterone support?</p>
+            <p>If you want expert help choosing, Clean Hormones Club gives group guidance, while Clean Hormones Complete gives personalized 1:1 support.</p>
           </div>
         `
       });
@@ -265,7 +373,7 @@ export default async function handler(req, res) {
         reply: `
           <div>
             <p>Got it. Low energy can point in a few different directions, so I’d ask one quick question first:</p>
-            <p>Is it more like <strong>low motivation/tiredness</strong>, <strong>low libido/strength</strong>, or <strong>brain fog with hot flashes</strong>?</p>
+            <p>Is it more like <strong>low motivation/tiredness</strong>, <strong>low libido/strength</strong>, <strong>brain fog with hot flashes</strong>, or do you want <strong>coaching to figure it out</strong>?</p>
           </div>
         `
       });
@@ -276,7 +384,7 @@ export default async function handler(req, res) {
         reply: `
           <div>
             <p>I can help narrow it down. Which sounds closest to your main concern?</p>
-            <p>1. Sleep, mood, or progesterone support<br>2. Hot flashes, brain fog, or estrogen support<br>3. Low energy, motivation, or DHEA support<br>4. Low libido, strength, or vitality</p>
+            <p>1. Sleep, mood, or progesterone support<br>2. Hot flashes, brain fog, or estrogen support<br>3. Low energy, motivation, or DHEA support<br>4. Low libido, strength, or vitality<br>5. Coaching or personalized guidance</p>
           </div>
         `
       });
@@ -291,7 +399,7 @@ export default async function handler(req, res) {
     const systemPrompt = `
 You are Glow Hormone Assistant for Glow Natural Wellness.
 
-You can recommend ONLY these 6 products:
+You can recommend ONLY these 8 options:
 ${PRODUCT_CATALOG.map((p, i) => `${i + 1}. ${p.title}
 Type: ${p.type}
 Best for: ${p.bestFor}
@@ -303,12 +411,14 @@ ${currentProduct?.title || "Unknown"}
 ${pageUrl || ""}
 
 Rules:
-- Only help with hormone wellness questions and choosing between these 6 products.
-- Never recommend any product outside the 6-product catalog.
+- Only help with hormone wellness questions and choosing between these 8 options.
+- Never recommend anything outside this catalog.
 - Do not diagnose medical conditions.
 - Do not give dosage advice.
 - Do not claim any product cures, treats, or prevents disease.
 - If the user's concern is broad, ask one short follow-up question first.
+- Recommend Clean Hormones Club when the user wants group support, education, community, weekly calls, accountability, or affordable coaching.
+- Recommend Clean Hormones Complete when the user wants 1:1 help, a consultation, custom protocol, symptom review, testing guidance, or deeper personalized support.
 - If recommending, recommend max 1 product unless the user asks for comparison.
 - Keep answer short and natural.
 - Return ONLY valid JSON.
@@ -350,7 +460,7 @@ Rules:
       parsed = JSON.parse(aiText);
     } catch (error) {
       parsed = {
-        answer: aiText || "I can help you choose between the hormone wellness products. What is your main concern: sleep, mood, energy, hot flashes, libido, or cream vs drops?",
+        answer: aiText || "I can help you choose between hormone products, Clean Hormones Club, and Clean Hormones Complete. What is your main concern?",
         product: ""
       };
     }
@@ -366,7 +476,7 @@ Rules:
     }
 
     return res.status(200).json({
-      reply: plainReply(parsed.answer || "I can help you choose between Pro Drops, ProDerm, E2 Drops, EstraDerm, DHEA Drops, and TestaDerm. What is your main concern?")
+      reply: plainReply(parsed.answer || "I can help you choose between Pro Drops, ProDerm, E2 Drops, EstraDerm, DHEA Drops, TestaDerm, Clean Hormones Club, and Clean Hormones Complete. What is your main concern?")
     });
 
   } catch (error) {
