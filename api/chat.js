@@ -5,7 +5,7 @@ const PRODUCT_CATALOG = [
     image: "https://www.glownaturalwellness.com/cdn/shop/files/glow-natural-wellness-pro-drops-1228240408.png?v=1774027211&width=300",
     type: "Topical progesterone oil drops",
     bestFor: "Progesterone support, estrogen dominance, sleep support, calm mood, perimenopause and menopause support.",
-    guide: "Suggest when user mentions sleep issues, mood swings, estrogen dominance, perimenopause, menopause, calm mood, or progesterone support."
+    guide: "Best when the user mentions sleep issues, mood swings, estrogen dominance, perimenopause, menopause, calm mood, or progesterone support."
   },
   {
     title: "ProDerm",
@@ -13,7 +13,7 @@ const PRODUCT_CATALOG = [
     image: "https://www.glownaturalwellness.com/cdn/shop/files/glow-natural-wellness-proderm-1229399161.png?v=1774538230&width=300",
     type: "Transdermal progesterone cream",
     bestFor: "Progesterone support in a cream format with skin absorption.",
-    guide: "Suggest when user wants progesterone support but prefers cream instead of drops."
+    guide: "Best when the user wants progesterone support but prefers cream instead of drops."
   },
   {
     title: "E2 Drops",
@@ -21,7 +21,7 @@ const PRODUCT_CATALOG = [
     image: "https://www.glownaturalwellness.com/cdn/shop/files/glow-natural-wellness-e2-drops-1228240397.png?v=1774027066&width=300",
     type: "Topical estradiol oil drops",
     bestFor: "Estrogen and estradiol support, hormonal fluctuation, mood swings, hot flashes, fatigue, and brain fog.",
-    guide: "Suggest when user mentions low estrogen, hot flashes, brain fog, fatigue, mood swings, or wants estrogen support in drop format."
+    guide: "Best when the user mentions low estrogen, hot flashes, brain fog, fatigue, mood swings, or wants estrogen support in drop format."
   },
   {
     title: "EstraDerm",
@@ -29,7 +29,7 @@ const PRODUCT_CATALOG = [
     image: "https://www.glownaturalwellness.com/cdn/shop/files/glow-natural-wellness-estraderm-1229399172.png?v=1774538446&width=300",
     type: "Transdermal estrogen cream",
     bestFor: "Estrogen support with estradiol and estriol in cream format.",
-    guide: "Suggest when user wants estrogen support but prefers cream instead of drops."
+    guide: "Best when the user wants estrogen support but prefers cream instead of drops."
   },
   {
     title: "DHEA Drops",
@@ -37,7 +37,7 @@ const PRODUCT_CATALOG = [
     image: "https://www.glownaturalwellness.com/cdn/shop/files/glow-natural-wellness-dhea-drops-1228240419.png?v=1774026826&width=300",
     type: "Topical DHEA oil drops",
     bestFor: "DHEA support, energy, mood, motivation, hormonal balance, aging support, perimenopause and menopause support.",
-    guide: "Suggest when user mentions low energy, low mood, low motivation, tiredness, fatigue, hormonal decline, or wants DHEA in drop format."
+    guide: "Best when the user mentions low energy, low mood, low motivation, tiredness, fatigue, hormonal decline, or wants DHEA in drop format."
   },
   {
     title: "TestaDerm",
@@ -45,7 +45,7 @@ const PRODUCT_CATALOG = [
     image: "https://www.glownaturalwellness.com/cdn/shop/files/glow-natural-wellness-testaderm-1229399150.png?v=1774538026&width=300",
     type: "Transdermal DHEA cream",
     bestFor: "DHEA and testosterone support, vitality, clarity, strength, and cream-based absorption.",
-    guide: "Suggest when user mentions testosterone support, low libido, low vitality, strength, clarity, or wants cream format."
+    guide: "Best when the user mentions testosterone support, low libido, low vitality, strength, clarity, or wants cream format."
   }
 ];
 
@@ -72,23 +72,58 @@ function productCard(product, reason) {
         </div>
       </div>
 
-      <p style="margin-top:10px;font-size:12px;color:#666;">
+      <p style="margin-top:10px;font-size:12px;line-height:1.35;color:#666;">
         This is general wellness guidance, not medical advice. Please consult a healthcare professional for personal hormone concerns.
       </p>
     </div>
   `;
 }
 
-function matchProductByMessage(message) {
+function plainReply(text) {
+  return `
+    <div>
+      <p>${escapeHtml(text)}</p>
+      <p style="margin-top:10px;font-size:12px;line-height:1.35;color:#666;">
+        This is general wellness guidance, not medical advice.
+      </p>
+    </div>
+  `;
+}
+
+function getIntent(message) {
   const text = String(message || "").toLowerCase();
+
+  const unrelatedWords = [
+    "weather", "bitcoin", "crypto", "football", "shopify code", "wordpress", "visa",
+    "movie", "celebrity", "recipe", "joke", "seo", "website design"
+  ];
+
+  if (unrelatedWords.some(word => text.includes(word))) {
+    return {
+      type: "unrelated"
+    };
+  }
+
+  if (
+    text.includes("drop") && text.includes("cream") ||
+    text.includes("drops or cream") ||
+    text.includes("cream or drops") ||
+    text.includes("difference") ||
+    text.includes("compare")
+  ) {
+    return {
+      type: "compare_format"
+    };
+  }
 
   if (
     text.includes("cream") &&
     (text.includes("progesterone") || text.includes("sleep") || text.includes("mood"))
   ) {
     return {
+      type: "recommend",
       product: PRODUCT_CATALOG[1],
-      reason: "Based on what you shared, ProDerm may be the better fit because it gives progesterone support in a cream format."
+      reason: "ProDerm may be the better fit if you want progesterone support in a cream format instead of drops."
     };
   }
 
@@ -97,23 +132,24 @@ function matchProductByMessage(message) {
     (text.includes("estrogen") || text.includes("estradiol") || text.includes("estriol") || text.includes("hot flash"))
   ) {
     return {
+      type: "recommend",
       product: PRODUCT_CATALOG[3],
-      reason: "Based on what you shared, EstraDerm may be the better fit because it offers estrogen support in a cream format."
+      reason: "EstraDerm may be the better fit if you want estrogen support in a cream format."
     };
   }
 
   if (
-    text.includes("sleep") ||
-    text.includes("progesterone") ||
-    text.includes("estrogen dominance") ||
-    text.includes("calm") ||
-    text.includes("mood") ||
-    text.includes("perimenopause") ||
-    text.includes("menopause")
+    text.includes("libido") ||
+    text.includes("testosterone") ||
+    text.includes("strength") ||
+    text.includes("vitality") ||
+    text.includes("drive") ||
+    text.includes("muscle")
   ) {
     return {
-      product: PRODUCT_CATALOG[0],
-      reason: "Based on what you shared, Pro Drops may be the closest fit because it focuses on progesterone support, calm mood, sleep support, and hormone balance."
+      type: "recommend",
+      product: PRODUCT_CATALOG[5],
+      reason: "TestaDerm may be the closest fit because it supports DHEA and testosterone-related wellness concerns like vitality, clarity, and strength."
     };
   }
 
@@ -123,42 +159,62 @@ function matchProductByMessage(message) {
     text.includes("brain fog") ||
     text.includes("low estrogen") ||
     text.includes("estradiol") ||
-    text.includes("estrogen")
+    text.includes("estrogen") ||
+    text.includes("night sweat")
   ) {
     return {
+      type: "recommend",
       product: PRODUCT_CATALOG[2],
-      reason: "Based on what you shared, E2 Drops may be a good fit because it supports estrogen and estradiol-related hormone balance."
+      reason: "E2 Drops may be a good fit because it supports estrogen and estradiol-related hormone balance."
     };
   }
 
   if (
+    text.includes("sleep") ||
+    text.includes("progesterone") ||
+    text.includes("estrogen dominance") ||
+    text.includes("calm") ||
+    text.includes("anxious") ||
+    text.includes("irritable") ||
+    text.includes("perimenopause") ||
+    text.includes("menopause")
+  ) {
+    return {
+      type: "recommend",
+      product: PRODUCT_CATALOG[0],
+      reason: "Pro Drops may be the closest fit because it focuses on progesterone support, calm mood, sleep support, and hormone balance."
+    };
+  }
+
+  if (
+    text.includes("low energy") ||
     text.includes("energy") ||
     text.includes("motivation") ||
-    text.includes("dhea") ||
-    text.includes("aging") ||
     text.includes("tired") ||
-    text.includes("fatigue")
+    text.includes("fatigue") ||
+    text.includes("exhausted")
   ) {
     return {
-      product: PRODUCT_CATALOG[4],
-      reason: "Based on what you shared, DHEA Drops may be the closest fit because it supports DHEA, energy, mood, and hormonal balance."
+      type: "followup_energy"
     };
   }
 
   if (
-    text.includes("testosterone") ||
-    text.includes("libido") ||
-    text.includes("vitality") ||
-    text.includes("strength") ||
-    text.includes("clarity")
+    text.includes("mood") ||
+    text.includes("hormone balance") ||
+    text.includes("balance") ||
+    text.includes("not feeling good") ||
+    text.includes("help me choose") ||
+    text.includes("which product")
   ) {
     return {
-      product: PRODUCT_CATALOG[5],
-      reason: "Based on what you shared, TestaDerm may be the closest fit because it supports DHEA and testosterone-related wellness concerns like vitality, clarity, and strength."
+      type: "followup_general"
     };
   }
 
-  return null;
+  return {
+    type: "ai"
+  };
 }
 
 export default async function handler(req, res) {
@@ -179,15 +235,56 @@ export default async function handler(req, res) {
 
     if (!message) {
       return res.status(400).json({
-        reply: "Please ask a question so I can help."
+        reply: plainReply("Please ask a question so I can help.")
       });
     }
 
-    const directMatch = matchProductByMessage(message);
+    const intent = getIntent(message);
 
-    if (directMatch) {
+    if (intent.type === "unrelated") {
       return res.status(200).json({
-        reply: productCard(directMatch.product, directMatch.reason)
+        reply: plainReply("I can help with Glow hormone wellness products only. Tell me what you need support with: sleep, mood, energy, hot flashes, libido, or drops vs cream.")
+      });
+    }
+
+    if (intent.type === "compare_format") {
+      return res.status(200).json({
+        reply: `
+          <div>
+            <p>Both formats can support hormone wellness, but the best choice depends on preference:</p>
+            <p><strong>Drops</strong>: good if you prefer a lightweight topical oil format.</p>
+            <p><strong>Creams</strong>: good if you prefer a transdermal cream texture.</p>
+            <p>Which hormone support are you looking for: progesterone, estrogen, or DHEA/testosterone support?</p>
+          </div>
+        `
+      });
+    }
+
+    if (intent.type === "followup_energy") {
+      return res.status(200).json({
+        reply: `
+          <div>
+            <p>Got it. Low energy can point in a few different directions, so I’d ask one quick question first:</p>
+            <p>Is it more like <strong>low motivation/tiredness</strong>, <strong>low libido/strength</strong>, or <strong>brain fog with hot flashes</strong>?</p>
+          </div>
+        `
+      });
+    }
+
+    if (intent.type === "followup_general") {
+      return res.status(200).json({
+        reply: `
+          <div>
+            <p>I can help narrow it down. Which sounds closest to your main concern?</p>
+            <p>1. Sleep, mood, or progesterone support<br>2. Hot flashes, brain fog, or estrogen support<br>3. Low energy, motivation, or DHEA support<br>4. Low libido, strength, or vitality</p>
+          </div>
+        `
+      });
+    }
+
+    if (intent.type === "recommend") {
+      return res.status(200).json({
+        reply: productCard(intent.product, intent.reason)
       });
     }
 
@@ -211,8 +308,8 @@ Rules:
 - Do not diagnose medical conditions.
 - Do not give dosage advice.
 - Do not claim any product cures, treats, or prevents disease.
-- If the user's concern is unclear, ask one short follow-up question.
-- If recommending, recommend max 1 product unless comparison is required.
+- If the user's concern is broad, ask one short follow-up question first.
+- If recommending, recommend max 1 product unless the user asks for comparison.
 - Keep answer short and natural.
 - Return ONLY valid JSON.
 - JSON format:
@@ -230,7 +327,7 @@ Rules:
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        temperature: 0.3,
+        temperature: 0.25,
         messages: [
           {
             role: "system",
@@ -238,7 +335,7 @@ Rules:
           },
           {
             role: "user",
-            content: message
+            content: String(message)
           }
         ]
       })
@@ -269,19 +366,12 @@ Rules:
     }
 
     return res.status(200).json({
-      reply: `
-        <div>
-          <p>${escapeHtml(parsed.answer || "I can help you choose between Pro Drops, ProDerm, E2 Drops, EstraDerm, DHEA Drops, and TestaDerm. What is your main concern?")}</p>
-          <p style="margin-top:10px;font-size:12px;color:#666;">
-            This is general wellness guidance, not medical advice.
-          </p>
-        </div>
-      `
+      reply: plainReply(parsed.answer || "I can help you choose between Pro Drops, ProDerm, E2 Drops, EstraDerm, DHEA Drops, and TestaDerm. What is your main concern?")
     });
 
   } catch (error) {
     return res.status(500).json({
-      reply: "Sorry, I could not get a reply right now. Please try again.",
+      reply: plainReply("Sorry, I could not get a reply right now. Please try again."),
       error: error.message
     });
   }
